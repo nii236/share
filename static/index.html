@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="apple-touch-icon" sizes="57x57" href="/static/apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="/static/apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/static/apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="/static/apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/static/apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="/static/apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="/static/apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/static/apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/static/android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="/static/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="stylesheet" href="/static/dropzone.css">
+    <link rel="stylesheet" href="/static/style.css">
+    <title>{{ if .Name}}Share {{.Name}}{{else}}Share a file{{end}}</title>
+</head>
+
+<body>
+    <main>
+        <h1 align="center"><a href="/">Share a file</a> </h1>
+        <p id="errormessage" class="error">{{.Error}}</p>
+        {{ if .Name}}
+        <!-- no error -->
+        <div class="content dropzone">
+            <p><a href="{{.Link}}">Download {{.Name}}</a> ({{.ContentType}}, {{.SizeHuman}})
+            </p>
+            {{if .IsImage}}
+            <img src="{{.Link}}" alt="{{.Name}}">
+            {{end}}
+            {{ if .Text }}
+            <pre><code>{{.Text}}</code></pre>
+            {{ end }}
+            {{ if .IsVideo}}
+            <video controls style="width:100%">
+                <source src="{{.Link}}" type="{{.ContentType}}">
+                Your browser does not support the video tag.
+            </video>
+            {{end}}
+            {{ if .IsAudio }}
+            <audio controls style="width:100%">
+                <source src="{{.Link}}" type="{{.ContentType}}">
+                Your browser does not support the audio element.
+            </audio>
+            {{ end }}
+            <details>
+                <summary>Uploaded {{.ModifiedHuman}} ({{.Modified.Format "01/02/06"}}).</summary>
+                <p> Automatic deletion in <em>{{.TimeToDeletionHuman}}</em>. <a href="/delete/{{.ID}}">Delete now</a>.</p>
+            </details>
+            <p> Permalink: /<a href="{{.Config.PublicURL}}/{{.ID}}">{{.ID}}</a>.
+            </p>
+        </div>
+        {{ else }}
+        <details>
+            <summary>Click here for FAQ.</summary>
+            <h3>Are the files encrypted?</h3>
+            <p>No. Any file you share is available publicly, without encryption, using the unique URL. If you need end-to-end encryption try <a href="https://send.firefox.com/" target="_blank">send.firefox.com</a>.</p>
+            <h3>How long will my file be available?</h3>
+            <p>
+                Any file you share will be deleted after a time based on the file size. The time to deletion is scaled so that 1 GB file will be deleted after {{.Config.MinutesPerGigabyte}} minutes.
+            </p>
+            <h3>Can I share a file using the terminal?</h3>
+            <p>
+                Yes. If you are familiar with <code>curl</code> you can use that to directly upload and download content.
+            </p>
+            <p style="margin-bottom: 0;"><strong>Upload a file</strong></p>
+            <pre><code>$ curl -L --progress --upload-file test.txt {{.Config.PublicURL}}
+{{.Config.PublicURL}}/patient-gecko/test.txt</code></pre>
+            <p style="margin-bottom: 0;"><strong>Download a file</strong></p>
+            <pre><code>$ curl {{.Config.PublicURL}}/patient-gecko/test.txt</code></pre>
+            <p>or</p>
+            <pre><code>$ wget --content-disposition {{.Config.PublicURL}}/patient-gecko</code></pre>
+            <h3>
+        </details>
+        <div id="filesBox" class="dropzone">
+            <div class="dz-message" data-dz-message><span>Drop or click here to share a file.<br>
+                    <p><small>Max file size: {{.Config.MaxBytesPerFileHuman}}</small></p>
+                </span></div>
+        </div>
+        {{end}}
+        <footer>
+            <p align="center" style="margin-bottom:0">
+                <img src="/static/logo47.png" style="max-width: 100px">
+            </p>
+            <p align="center">Made by <a href="https://github.com/schollz">schollz</a>, source available on <a href="https://github.com/schollz/share">Github</a>.</p>
+        </footer>
+        <input type="text" value="{{.Link}}" id="myInput" hidden>
+    </main>
+</body>
+{{ if .Name}}{{else}}
+<script src="/static/dropzone.js"></script>
+<script>
+function humanFileSize(bytes, si) {
+    var thresh = si ? 1000 : 1024;
+    if (Math.abs(bytes) < thresh) {
+        return bytes + ' B';
+    }
+    var units = si ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'] : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
+    var u = -1;
+    do {
+        bytes /= thresh;
+        ++u;
+    } while (Math.abs(bytes) >= thresh && u < units.length - 1);
+    return bytes.toFixed(1) + ' ' + units[u];
+}
+
+var Name = "";
+var filesize = 0;
+
+(function(Dropzone) {
+    Dropzone.autoDiscover = false;
+
+    let drop = new Dropzone('div#filesBox', {
+        maxFiles: 1,
+        url: '/',
+        method: 'post',
+        createImageThumbnails: false,
+        previewTemplate: "<div id='preview' class='.dropzone-previews'>#</div>",
+        chunking: true,
+        forceChunking: true,
+        parallelChunkUploads: true,
+        timeout: 3000000,
+        chunkSize: 2000000,
+    });
+
+    drop.on("uploadprogress", function(file, progress, bytesSent) {
+        progress = bytesSent / file.size * 100;
+        try {
+            var width = document.getElementById('preview').offsetWidth - 70;
+            var repeatTimes = Math.round(width / 9.03 * progress / 100);
+            document.getElementById("preview").innerHTML = `${Name} (${humanFileSize(filesize)})
+<p>${"#".repeat(repeatTimes)} ${Math.round(progress)}%</p>`;
+
+        } catch (err) {}
+    });
+
+    //     drop.on('totaluploadprogress', function(progress) {
+    //         console.log(progress);
+    //         // 9.03 pixels per #
+    //         try {
+    //             var width = document.getElementById('preview').offsetWidth - 60;
+    //         var repeatTimes = Math.round(width / 9.03 * progress / 100);
+    //         document.getElementById("preview").innerHTML = `${Name} (${humanFileSize(filesize)})
+    // <p>${"#".repeat(repeatTimes)} ${Math.round(progress)}%</p>`;
+
+    //         }catch(err) {}
+
+    //     });
+
+    drop.on('success', function(file, response) {
+        console.log("success");
+        console.log(response);
+        response = JSON.parse(file.xhr.response);
+        console.log(file)
+        if (response.id != "none") {
+            location.replace("/" + response.id);
+        }
+    });
+
+    drop.on('error', function(file, response) {
+        console.log('error');
+        console.log(response);
+        document.getElementById("errormessage").innerText = response.message;
+        // TODO: display this error
+        drop.removeAllFiles();
+    });
+
+    drop.on('addedfile', function(file) {
+        console.log(file);
+        Name = file.name;
+        filesize = file.size;
+        document.getElementById("preview").innerText = `${file.name} (${humanFileSize(file.size)})
+`;
+    })
+
+    drop.on('removedfile', function(file) {
+        console.log(file);
+    });
+})(Dropzone);
+</script>
+{{end}}
+
+</html>
