@@ -434,7 +434,6 @@ func (p *Page) handleGetHome(w http.ResponseWriter, r *http.Request) (err error)
 func handle(w http.ResponseWriter, r *http.Request) (err error) {
 	// first get ID and filename if it is availble
 	p := NewPage()
-
 	if r.Method == "GET" && strings.HasPrefix(r.URL.Path, "/delete/") {
 		// GET /delete/ID will delete the ID
 		urlPathSplit := strings.Split(r.URL.Path, "/")
