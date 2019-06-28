@@ -439,7 +439,7 @@ func handle(w http.ResponseWriter, r *http.Request) (err error) {
 		// GET /delete/ID will delete the ID
 		urlPathSplit := strings.Split(r.URL.Path, "/")
 		id := urlPathSplit[len(urlPathSplit)-1]
-		_, errStat := os.Stat(path.Join(c.ContentDirectory, p.ID))
+		_, errStat := os.Stat(path.Join(c.ContentDirectory, id))
 		if errStat != nil {
 			err = fmt.Errorf("Data with id '%s' does not exist.", id)
 			return
@@ -448,6 +448,20 @@ func handle(w http.ResponseWriter, r *http.Request) (err error) {
 		p := NewPage()
 		p.Error = fmt.Sprintf("Removed %s.", id)
 		return p.handleGetHome(w, r)
+	} else if r.Method == "GET" && strings.HasPrefix(r.URL.Path, "/exists/") {
+		urlPathSplit := strings.Split(r.URL.Path, "/")
+		if len(urlPathSplit) < 3 {
+			jsonResponse(w, http.StatusOK, map[string]string{"exists": "yes", "id": "", "name": ""})
+		}
+		id := filepath.Clean(urlPathSplit[len(urlPathSplit)-2])
+		name := filepath.Clean(urlPathSplit[len(urlPathSplit)-1])
+		_, errStat := os.Stat(path.Join(c.ContentDirectory, id, name))
+		if errStat != nil {
+			jsonResponse(w, http.StatusOK, map[string]string{"exists": "no", "id": id, "name": name})
+		} else {
+			jsonResponse(w, http.StatusOK, map[string]string{"exists": "yes", "id": id, "name": name})
+		}
+		return nil
 	} else if r.Method == "GET" && strings.HasPrefix(r.URL.Path, "/static/") {
 		// GET /static/<file> will return the <file> if it exists
 		p.NameOnDisk = strings.TrimPrefix(filepath.ToSlash(filepath.Clean(r.URL.Path[1:])), "/") + ".gz"
