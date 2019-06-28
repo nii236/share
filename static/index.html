@@ -29,12 +29,16 @@
 
 <body>
     <main>
+        <center>
+            <div id="snackbar">Copied<br>{{.Config.PublicURL}}/{{.ID}}<br>to clipboard</div>
+        </center>
         <h1 align="center"><a href="/">Share a file</a> </h1>
         <p id="errormessage" class="error">{{.Error}}</p>
         {{ if .Name}}
         <!-- no error -->
         <div class="content dropzone">
-            <p><a href="{{.Link}}">Download {{.Name}}</a> ({{.ContentType}}, {{.SizeHuman}})
+            <p><a href="{{.Link}}" download>Download {{.Name}}</a> ({{.SizeHuman}}, permalink: <a href="#" onclick="myFunction()" class="btn" data-clipboard-text="{{.Config.PublicURL}}/{{.ID}}">
+                    /{{.ID}}</a>)
             </p>
             {{if .IsImage}}
             <img src="{{.Link}}" alt="{{.Name}}">
@@ -58,8 +62,6 @@
                 <summary>Uploaded {{.ModifiedHuman}} ({{.Modified.Format "01/02/06"}}).</summary>
                 <p> Automatic deletion in <em>{{.TimeToDeletionHuman}}</em>. <a href="/delete/{{.ID}}">Delete now</a>.</p>
             </details>
-            <p> Permalink: /<a href="{{.Config.PublicURL}}/{{.ID}}">{{.ID}}</a>.
-            </p>
         </div>
         {{ else }}
         <details>
@@ -97,98 +99,118 @@
         </footer>
         <input type="text" value="{{.Link}}" id="myInput" hidden>
     </main>
-</body>
-{{ if .Name}}{{else}}
-<script src="/static/dropzone.js"></script>
-<script>
-function humanFileSize(bytes, si) {
-    var thresh = si ? 1000 : 1024;
-    if (Math.abs(bytes) < thresh) {
-        return bytes + ' B';
+    {{ if .Name}}{{else}}
+    <script src="/static/dropzone.js"></script>
+    <script>
+    function humanFileSize(bytes, si) {
+        var thresh = si ? 1000 : 1024;
+        if (Math.abs(bytes) < thresh) {
+            return bytes + ' B';
+        }
+        var units = si ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'] : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
+        var u = -1;
+        do {
+            bytes /= thresh;
+            ++u;
+        } while (Math.abs(bytes) >= thresh && u < units.length - 1);
+        return bytes.toFixed(1) + ' ' + units[u];
     }
-    var units = si ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'] : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
-    var u = -1;
-    do {
-        bytes /= thresh;
-        ++u;
-    } while (Math.abs(bytes) >= thresh && u < units.length - 1);
-    return bytes.toFixed(1) + ' ' + units[u];
-}
 
-var Name = "";
-var filesize = 0;
+    var Name = "";
+    var filesize = 0;
 
-(function(Dropzone) {
-    Dropzone.autoDiscover = false;
+    (function(Dropzone) {
+        Dropzone.autoDiscover = false;
 
-    let drop = new Dropzone('div#filesBox', {
-        maxFiles: 1,
-        url: '/',
-        method: 'post',
-        createImageThumbnails: false,
-        previewTemplate: "<div id='preview' class='.dropzone-previews'>#</div>",
-        chunking: true,
-        forceChunking: true,
-        parallelChunkUploads: true,
-        timeout: 3000000,
-        chunkSize: 2000000,
-    });
+        let drop = new Dropzone('div#filesBox', {
+            maxFiles: 1,
+            url: '/',
+            method: 'post',
+            createImageThumbnails: false,
+            previewTemplate: "<div id='preview' class='.dropzone-previews'>#</div>",
+            chunking: true,
+            forceChunking: true,
+            parallelChunkUploads: true,
+            timeout: 3000000,
+            chunkSize: 2000000,
+        });
 
-    drop.on("uploadprogress", function(file, progress, bytesSent) {
-        progress = bytesSent / file.size * 100;
-        try {
-            var width = document.getElementById('preview').offsetWidth - 70;
-            var repeatTimes = Math.round(width / 9.03 * progress / 100);
-            document.getElementById("preview").innerHTML = `${Name} (${humanFileSize(filesize)})
+        drop.on("uploadprogress", function(file, progress, bytesSent) {
+            progress = bytesSent / file.size * 100;
+            try {
+                var width = document.getElementById('preview').offsetWidth - 70;
+                var repeatTimes = Math.round(width / 9.03 * progress / 100);
+                document.getElementById("preview").innerHTML = `${Name} (${humanFileSize(filesize)})
 <p>${"#".repeat(repeatTimes)} ${Math.round(progress)}%</p>`;
 
-        } catch (err) {}
-    });
+            } catch (err) {}
+        });
 
-    //     drop.on('totaluploadprogress', function(progress) {
-    //         console.log(progress);
-    //         // 9.03 pixels per #
-    //         try {
-    //             var width = document.getElementById('preview').offsetWidth - 60;
-    //         var repeatTimes = Math.round(width / 9.03 * progress / 100);
-    //         document.getElementById("preview").innerHTML = `${Name} (${humanFileSize(filesize)})
-    // <p>${"#".repeat(repeatTimes)} ${Math.round(progress)}%</p>`;
+        //     drop.on('totaluploadprogress', function(progress) {
+        //         console.log(progress);
+        //         // 9.03 pixels per #
+        //         try {
+        //             var width = document.getElementById('preview').offsetWidth - 60;
+        //         var repeatTimes = Math.round(width / 9.03 * progress / 100);
+        //         document.getElementById("preview").innerHTML = `${Name} (${humanFileSize(filesize)})
+        // <p>${"#".repeat(repeatTimes)} ${Math.round(progress)}%</p>`;
 
-    //         }catch(err) {}
+        //         }catch(err) {}
 
-    //     });
+        //     });
 
-    drop.on('success', function(file, response) {
-        console.log("success");
-        console.log(response);
-        response = JSON.parse(file.xhr.response);
-        console.log(file)
-        if (response.id != "none") {
-            location.replace("/" + response.id);
+        drop.on('success', function(file, response) {
+            console.log("success");
+            console.log(response);
+            response = JSON.parse(file.xhr.response);
+            console.log(file)
+            if (response.id != "none") {
+                location.replace("/" + response.id);
+            }
+        });
+
+        drop.on('error', function(file, response) {
+            console.log('error');
+            console.log(response);
+            document.getElementById("errormessage").innerText = response.message;
+            // TODO: display this error
+            drop.removeAllFiles();
+        });
+
+        drop.on('addedfile', function(file) {
+            console.log(file);
+            Name = file.name;
+            filesize = file.size;
+            document.getElementById("preview").innerText = `${file.name} (${humanFileSize(file.size)})
+`;
+        })
+
+        drop.on('removedfile', function(file) {
+            console.log(file);
+        });
+    })(Dropzone);
+    </script>
+    {{end}}
+    <script src="/static/clipboard.min.js"></script>
+    <script>
+    function myFunction() {
+        // Get the snackbar DIV
+        var x = document.getElementById("snackbar")
+
+        // Add the "show" class to DIV
+        x.className = "show";
+
+        // After 3 seconds, remove the show class from DIV
+        setTimeout(function() { x.className = x.className.replace("show", ""); }, 3000);
+    }
+
+    addEventListener('click', function(ev) {
+        if (ev.target.classList.contains('btn')) {
+            ev.preventDefault();
         }
     });
-
-    drop.on('error', function(file, response) {
-        console.log('error');
-        console.log(response);
-        document.getElementById("errormessage").innerText = response.message;
-        // TODO: display this error
-        drop.removeAllFiles();
-    });
-
-    drop.on('addedfile', function(file) {
-        console.log(file);
-        Name = file.name;
-        filesize = file.size;
-        document.getElementById("preview").innerText = `${file.name} (${humanFileSize(file.size)})
-`;
-    })
-
-    drop.on('removedfile', function(file) {
-        console.log(file);
-    });
-})(Dropzone);
-</script>
-{{end}}
+    var clipboard = new ClipboardJS('.btn');
+    </script>
+</body>
 
 </html>
