@@ -99,6 +99,14 @@
             <p style="margin-bottom: 0;"><strong>Upload a file</strong></p>
             <pre><code>$ curl -L --progress --upload-file test.txt {{.Config.PublicURL}}
 {{.Config.PublicURL}}/patient-gecko/test.txt</code></pre>
+            
+            <p>Or, use this <code>.bashrc</code>/<code>.zshrc</code> shortcut:</p>
+<pre><code>share() {
+    curl --progress-bar --upload-file "$1" https://share.schollz.com | tee /dev/null;
+    echo
+}
+alias share=share</code></pre>
+            
             <p style="margin-bottom: 0;"><strong>Download a file</strong></p>
             <pre><code>$ curl {{.Config.PublicURL}}/patient-gecko/test.txt</code></pre>
             <p>or</p>
