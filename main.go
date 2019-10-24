@@ -48,7 +48,7 @@ type Config struct {
 	MaxBytesTotal        int64
 	MaxBytesPerFile      int64
 	MaxBytesPerFileHuman string
-	MinutesPerGigabyte   int
+	MinutesPerGigabyte   float64
 }
 
 // uploads keep track of parallel chunking
@@ -69,7 +69,7 @@ func main() {
 	flag.BoolVar(&c.Debug, "debug", false, "debug mode")
 	flag.Int64Var(&c.MaxBytesPerFile, "max-file", 100000000, "max bytes per file")
 	flag.Int64Var(&c.MaxBytesTotal, "max-total", 10000000000, "max bytes total")
-	flag.IntVar(&c.MinutesPerGigabyte, "min-per-gig", 30, "number of minutes per gigabyte to scale auto-deletion")
+	flag.Float64Var(&c.MinutesPerGigabyte, "min-per-gig", 30, "number of minutes per gigabyte to scale auto-deletion")
 	flag.Parse()
 
 	// set a random seed for random activities
@@ -127,7 +127,7 @@ func deleteOld() {
 	}
 
 	// find all the meta informaiton
-	files, err := filepath.Glob(fmt.Sprintf("%s/*/*.json.gz", c.ContentDirectory))
+	files, err := ioutil.ReadDir(c.ContentDirectory)
 	if err != nil {
 		log.Error(err)
 		return
@@ -136,18 +136,17 @@ func deleteOld() {
 
 	// go through each of the meta information files
 	for _, f := range files {
-		f = filepath.Clean(filepath.ToSlash(f))
-		fsplit := strings.Split(f, "/")
-		if len(fsplit) < 2 {
+		if strings.HasPrefix(f.Name(), "sharetemp") {
 			continue
 		}
-		id := fsplit[1]
+		log.Debug(f)
+		_, id := filepath.Split(f.Name())
 		p, err := loadPageInfo(id)
 		if err != nil {
 			log.Debugf("skipping %s: %s", id, err.Error())
 			continue
 		}
-		if p.TimeToDeletion.Seconds() > 0 {
+		if time.Since(p.Modified).Seconds() < p.TimeToDeletion.Seconds() {
 			continue
 		}
 		log.Debugf("deleting %s (%s, %s)", p.ID, p.SizeHuman, p.ModifiedHuman)
@@ -304,6 +303,9 @@ func (p *Page) handlePost(w http.ResponseWriter, r *http.Request) (err error) {
 	}
 	// remove temp file when finished
 	_, err = CopyMax(f, file, c.MaxBytesPerFile)
+	if err != nil {
+		log.Error(err)
+	}
 	f.Close()
 
 	// check if need to cat
