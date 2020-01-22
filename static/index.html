@@ -101,11 +101,7 @@
 {{.Config.PublicURL}}/patient-gecko/test.txt</code></pre>
             
             <p>Or, use this <code>.bashrc</code>/<code>.zshrc</code> shortcut:</p>
-<pre><code>share() {
-    curl --progress-bar --upload-file "$1" https://share.schollz.com | tee /dev/null;
-    echo
-}
-alias share=share</code></pre>
+<pre><code>alias share='f() { curl --progress-bar --upload-file "$1" https://share.schollz.com | tee /dev/null; echo };f'</code></pre>
             
             <p style="margin-bottom: 0;"><strong>Download a file</strong></p>
             <pre><code>$ curl {{.Config.PublicURL}}/patient-gecko/test.txt</code></pre>

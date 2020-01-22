@@ -31,12 +31,7 @@ https://share.schollz.com/bemi4x/README.md
 Use this `.bashrc`/`.zshrc` shortcut:
 
 ```bash
-share() {
-    curl --progress-bar --upload-file "$1" https://share.schollz.com | tee /dev/null;
-    echo
-}
-
-alias share=share
+alias share='f() { curl --progress-bar --upload-file "$1" https://share.schollz.com | tee /dev/null; echo };f'
 ```
 
 **Download a file**
