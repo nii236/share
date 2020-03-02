@@ -107,9 +107,11 @@ func main() {
 
 	// go routine for deleting old files
 	go func() {
+		deleteOld(true)
+		TrimContent()
 		for {
 			deleteOld()
-			time.Sleep(1 * time.Minute)
+			time.Sleep(30 * time.Minute)
 		}
 	}()
 
@@ -120,7 +122,7 @@ func main() {
 }
 
 // deleteOld goes through the files and deletes old uploads
-func deleteOld() {
+func deleteOld(removeTempFiles ...bool) {
 	dirSize, _, err := DirSize(c.ContentDirectory)
 	if err != nil {
 		log.Error(err)
@@ -137,6 +139,12 @@ func deleteOld() {
 	// go through each of the meta information files
 	for _, f := range files {
 		if strings.HasPrefix(f.Name(), "sharetemp") {
+			if len(removeTempFiles) > 0 && removeTempFiles[0] {
+				err := os.Remove(path.Join(c.ContentDirectory, f.Name()))
+				if err != nil {
+					log.Errorf("problem removing temp file: %s", f.Name())
+				}
+			}
 			continue
 		}
 		log.Debug(f)
@@ -147,6 +155,7 @@ func deleteOld() {
 			continue
 		}
 		if time.Since(p.Modified).Seconds() < p.TimeToDeletion.Seconds() {
+			log.Debugf("skipping %s %s: not old enough (< %s)", time.Since(p.Modified).String(), id, p.TimeToDeletion.String())
 			continue
 		}
 		log.Debugf("deleting %s (%s, %s)", p.ID, p.SizeHuman, p.ModifiedHuman)
@@ -160,7 +169,13 @@ func deleteOld() {
 // TrimContent will continually purge things from the content directory until
 // the content directoyr is below the specified size
 func TrimContent() {
+	i := 0
 	for {
+		i++
+		if i > 30 {
+			// avoid the infinite loop
+			break
+		}
 		dirSize, biggestFileID, err := DirSize(c.ContentDirectory)
 		if err != nil {
 			log.Error(err)
