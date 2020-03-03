@@ -247,6 +247,7 @@ type Page struct {
 	IsText        bool
 	IsAudio       bool
 	IsVideo       bool
+	IsASCII       bool
 
 	// computed properties
 	NameOnDisk          string
@@ -420,7 +421,9 @@ func (p *Page) handleGetData(w http.ResponseWriter, r *http.Request, decompress 
 }
 
 func (p *Page) handleShowDataInBrowser(w http.ResponseWriter, r *http.Request) (err error) {
-	if p.IsText && p.Size < 20000 {
+	log.Debugf("%+v", p)
+	if p.IsASCII && p.Size < 10000000 {
+		log.Debugf("showing page %s", p.ID)
 		b, _ := ioutil.ReadFile(p.NameOnDisk)
 		gr, errGzip := gzip.NewReader(bytes.NewBuffer(b))
 		if errGzip != nil {
@@ -487,7 +490,7 @@ func handle(w http.ResponseWriter, r *http.Request) (err error) {
 			log.Error(err)
 			return
 		}
-		p.ContentType, err = GetFileContentTypeReader(p.NameOnDisk, bytes.NewBuffer(b))
+		p.ContentType, _, err = GetFileContentTypeReader(p.NameOnDisk, bytes.NewBuffer(b))
 		if err != nil {
 			log.Error(err)
 			return
@@ -680,7 +683,8 @@ func copyToContentDirectory(fname string, tempFname string, originalSize int64) 
 	p.Modified = time.Now()
 	p.ModifiedHuman = HumanizeTime(p.Modified)
 	p.Link = fmt.Sprintf("/1/%s/%s", p.ID, p.Name)
-	p.ContentType, err = GetFileContentType(path.Join(c.ContentDirectory, p.ID, p.Name))
+	var isASCIIIData bool
+	p.ContentType, isASCIIIData, err = GetFileContentType(path.Join(c.ContentDirectory, p.ID, p.Name))
 	if err != nil {
 		log.Error(err)
 		return
@@ -689,6 +693,7 @@ func copyToContentDirectory(fname string, tempFname string, originalSize int64) 
 	p.IsText = strings.Contains(p.ContentType, "text/")
 	p.IsAudio = strings.Contains(p.ContentType, "audio/")
 	p.IsVideo = strings.Contains(p.ContentType, "video/")
+	p.IsASCII = isASCIIIData
 
 	// write gzipped JSON
 	fWrite, err := os.Create(path.Join(c.ContentDirectory, id, id+".json.gz"))
@@ -765,7 +770,7 @@ func Filemd5Sum(pathToFile string) (result string, err error) {
 }
 
 // GetFileContentType returns the MIME content-type of a file
-func GetFileContentType(fname string) (contentType string, err error) {
+func GetFileContentType(fname string) (contentType string, isaciii bool, err error) {
 	// Open a file descriptor
 	file, err := os.Open(fname)
 	if err != nil {
@@ -778,7 +783,7 @@ func GetFileContentType(fname string) (contentType string, err error) {
 
 // GetFileContentTypeReader returns the MIME content-type from the bytes and
 // a file name.
-func GetFileContentTypeReader(fname string, file io.Reader) (contentType string, err error) {
+func GetFileContentTypeReader(fname string, file io.Reader) (contentType string, isaciii bool, err error) {
 	gz, err := gzip.NewReader(file)
 	if err != nil {
 		return
@@ -813,6 +818,7 @@ func GetFileContentTypeReader(fname string, file io.Reader) (contentType string,
 			contentType = "text/css"
 		}
 	}
+	isaciii = isASCII(string(head))
 	return
 }
 
