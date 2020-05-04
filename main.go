@@ -651,7 +651,7 @@ func copyToContentDirectory(fname string, tempFname string, originalSize int64) 
 
 	hash, _ := Filemd5Sum(tempFname)
 	// id := strings.ToLower(base32.StdEncoding.EncodeToString([]byte(hash)))[:8]
-	id := RandStringBytesMaskImpr(hash, 6)
+	id := RandomName(hash)
 	// id := WordHash(hash)
 	if _, err = os.Stat(path.Join(c.ContentDirectory, id)); !os.IsNotExist(err) {
 		err = os.RemoveAll(path.Join(c.ContentDirectory, id))
