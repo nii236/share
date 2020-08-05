@@ -60,6 +60,11 @@
             <p><a href="{{.Link}}" download>Download {{.Name}}</a> ({{.SizeHuman}}, permalink: <a href="#" onclick="myFunction()" class="btn" data-clipboard-text="{{.Config.PublicURL}}/{{.ID}}">
                     /{{.ID}}</a>)
             </p>
+            <center>
+                <p align="center" style="max-width: 50%;width:50%;">
+                    <div id="qrcode" style="width:50%;"></div>
+                </p>
+            </center>
             {{if .IsImage}}
             <img src="{{.Link}}" alt="{{.Name}}">
             {{end}}
@@ -99,10 +104,8 @@
             <p style="margin-bottom: 0;"><strong>Upload a file</strong></p>
             <pre><code>$ curl -L --progress --upload-file test.txt {{.Config.PublicURL}}
 {{.Config.PublicURL}}/patient-gecko/test.txt</code></pre>
-            
             <p>Or, use this <code>.bashrc</code>/<code>.zshrc</code> shortcut:</p>
-<pre><code>alias share='f() { curl --progress-bar --upload-file "$1" https://share.schollz.com | tee /dev/null; echo };f'</code></pre>
-            
+            <pre><code>alias share='f() { curl --progress-bar --upload-file "$1" https://share.schollz.com | tee /dev/null; echo };f'</code></pre>
             <p style="margin-bottom: 0;"><strong>Download a file</strong></p>
             <pre><code>$ curl {{.Config.PublicURL}}/patient-gecko/test.txt</code></pre>
             <p>or</p>
@@ -128,7 +131,13 @@
         </footer>
         <input type="text" value="{{.Link}}" id="myInput" hidden>
     </main>
-    {{ if .Name}}{{else}}
+    {{ if .Name}}
+    <script src="/static/qrcode.min.js"></script>
+    <script>
+    var qrcode = new QRCode("qrcode");
+    qrcode.makeCode(window.location.href);
+    </script>
+    {{else}}
     <script src="/static/dropzone.js"></script>
     <script>
     function humanFileSize(bytes, si) {
