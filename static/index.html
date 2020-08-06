@@ -60,11 +60,16 @@
             <p><a href="{{.Link}}" download>Download {{.Name}}</a> ({{.SizeHuman}}, permalink: <a href="#" onclick="myFunction()" class="btn" data-clipboard-text="{{.Config.PublicURL}}/{{.ID}}">
                     /{{.ID}}</a>)
             </p>
-            <center>
-                <p align="center" style="max-width: 50%;width:50%;">
-                    <div id="qrcode" style="width:50%;"></div>
-                </p>
-            </center>
+            <p>
+                <details>
+                    <summary>Show QR code</summary>
+                    <center>
+                        <p align="center" style="max-width: 50%;width:50%;">
+                            <div id="qrcode" style="width:50%;"></div>
+                        </p>
+                    </center>
+                </details>
+            </p>
             {{if .IsImage}}
             <img src="{{.Link}}" alt="{{.Name}}">
             {{end}}
@@ -83,10 +88,8 @@
                 Your browser does not support the audio element.
             </audio>
             {{ end }}
-            <details>
-                <summary>Uploaded {{.ModifiedHuman}} ({{.Modified.Format "01/02/06"}}).</summary>
-                <p> Automatic deletion in <em>{{.TimeToDeletionHuman}}</em>. <a href="/delete/{{.ID}}">Delete now</a>.</p>
-            </details>
+            <p style="margin-bottom:0;">Uploaded {{.ModifiedHuman}} at {{.Modified.Format "3:04pm on January 2, 2006"}}.</p>
+            <p> Automatic deletion in <em>{{.TimeToDeletionHuman}}</em>. <a href="/delete/{{.ID}}">Delete now</a>.</p>
         </div>
         {{ else }}
         <details>
