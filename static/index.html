@@ -57,7 +57,7 @@
         {{ if .Name}}
         <!-- no error -->
         <div class="content dropzone">
-            <p><a href="{{.Link}}" download>Download {{.Name}}</a> ({{.SizeHuman}}, permalink: <a href="#" onclick="myFunction()" class="btn" data-clipboard-text="{{.Config.PublicURL}}/{{.ID}}">
+            <p><a href="{{.Link}}" download>Download {{.Name}}</a> ({{.SizeHuman}}, permalink: <a href="{{.Link}}" target="_blank">
                     /{{.ID}}</a>)
             </p>
             <p>

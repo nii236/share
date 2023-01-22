@@ -1,13 +1,11 @@
 package main
 
-//go:generate go get -v github.com/jteeuwen/go-bindata/go-bindata
-//go:generate go-bindata static/
-
 import (
 	"bufio"
 	"bytes"
 	"compress/gzip"
 	"crypto/md5"
+	"embed"
 	"encoding/hex"
 	"encoding/json"
 	"flag"
@@ -34,6 +32,11 @@ import (
 	"github.com/hako/durafmt"
 	log "github.com/schollz/logger"
 )
+
+// content holds our static web server content.
+//
+//go:embed static/*
+var content embed.FS
 
 // global config
 var c Config
@@ -89,7 +92,7 @@ func main() {
 
 	// initialize home page
 	indexTemplate = template.New("basic")
-	b, err := Asset("static/index.html")
+	b, err := content.ReadFile("static/index.html")
 	if err != nil {
 		panic(err)
 	}
@@ -485,7 +488,7 @@ func handle(w http.ResponseWriter, r *http.Request) (err error) {
 		// GET /static/<file> will return the <file> if it exists
 		p.NameOnDisk = strings.TrimPrefix(filepath.ToSlash(filepath.Clean(r.URL.Path[1:])), "/") + ".gz"
 		var b []byte
-		b, err = Asset(p.NameOnDisk)
+		b, err = content.ReadFile(p.NameOnDisk)
 		if err != nil {
 			log.Error(err)
 			return
