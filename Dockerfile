@@ -9,5 +9,4 @@ FROM alpine:latest
 VOLUME /data
 EXPOSE 8222
 COPY --from=builder /go/bin/share /share
-ENV url "http://localhost:8222"
-CMD ["sh","-c","/share --debug --min-per-gig 120 --max-file 500000000 --data /data --public ${url}"]
+CMD ["sh","-c","/share"]
